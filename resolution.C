@@ -182,18 +182,6 @@ void resolution(){
   						resol_z0->Fill(mc.Eta(),abs((z0-trk_z0[trk_atIP[rcftr[r2mf[n]]]])/z0));
   						}
   					}
-  				//boost plot degli adroni pesanti
-  				if((selection_cc(mcpdg[mcpa[r2mt[n]]])==0 || selection_bb(mcpdg[mcpa[r2mt[n]]])==0)){
-  					for(l=0;l<length;l++){if(mcpa[r2mt[n]]==pdg[l]){count++;}}
-  					if(count==0){
-	  					pdg[length]=mcpa[r2mt[n]];
-	  					length++;
-	  					cout<<mcpdg[mcpa[r2mt[n]]]<<endl;
-	  					mc_pa.SetPxPyPzE(mcmox[mcpa[r2mt[n]]],mcmoy[mcpa[r2mt[n]]],mcmoz[mcpa[r2mt[n]]],mcene[mcpa[r2mt[n]]]);
-	  					mc_pa_mom=sqrt(mc_pa.Px()*mc_pa.Px()+mc_pa.Py()*mc_pa.Py()+mc_pa.Pz()*mc_pa.Pz());
-	  					boost->Fill(mc_pa_mom/mc_pa.Pt());
-	  					}
-	  				}
   				}
   			}
   		length=0;
