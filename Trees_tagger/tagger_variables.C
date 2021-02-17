@@ -144,8 +144,8 @@ void tagger_variables(){
         tree->Branch("pl_rel_TRK2", &pl_rel_trk2, "pl_rel_TRK2/D");
         tree->Branch("pl_rel_permom_TRK1", &pl_rel_permom_trk1, "pl_rel_permom_TRK1/D");
         tree->Branch("pl_rel_permom_TRK2", &pl_rel_permom_trk2, "pl_rel_permom_TRK2/D");
-        tree->Branch("dR_jet_TRK1", &dR_jet_trk1, "dR_jet_TRK2/D");
-        tree->Branch("dR_jet_TRK2", &dR_jet_trk2, "dR_jet_TRK1/D");
+        tree->Branch("dR_jet_TRK1", &dR_jet_trk1, "dR_jet_TRK1/D");
+        tree->Branch("dR_jet_TRK2", &dR_jet_trk2, "dR_jet_TRK2/D");
         tree->Branch("dR_jet_tot_TRK", &dR_jet_tot_trk, "dR_jet_tot_TRK/D");
         tree->Branch("Et_trk_Jet", &Et_trk_jet, "Et_trk_Jet/D");
         //lepton variables
@@ -156,8 +156,8 @@ void tagger_variables(){
         tree->Branch("eta_rel_LEP2", &eta_rel_lep2, "eta_rel_LEP2/D");
         tree->Branch("pt_rel_LEP1", &pt_rel_lep1, "pt_rel_LEP1/D");
         tree->Branch("pt_rel_LEP2", &pt_rel_lep2, "pt_rel_LEP2/D");
-        tree->Branch("dR_jet_LEP1", &dR_jet_lep1, "dR_jet_LEP2/D");
-        tree->Branch("dR_jet_LEP2", &dR_jet_lep2, "dR_jet_LEP1/D");
+        tree->Branch("dR_jet_LEP1", &dR_jet_lep1, "dR_jet_LEP1/D");
+        tree->Branch("dR_jet_LEP2", &dR_jet_lep2, "dR_jet_LEP2/D");
         tree->Branch("pt_lj_LEP1", &pt_lj_lep1, "pt_lj_LEP1/D");
         tree->Branch("pt_lj_LEP2", &pt_lj_lep2, "pt_lj_LEP2/D");
         tree->Branch("pl_rel_perjetmom_LEP1", &pl_rel_perjetmom_lep1, "pl_rel_perjetmom_LEP1/D");
