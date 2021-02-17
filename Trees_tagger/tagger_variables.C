@@ -2,7 +2,7 @@
 #include "heavyhadron_selection.C"
 #include "selection.C"
 
-#define dR_Jet 1.5
+#define dR_Jet 1.0
 #define DEFAULT_VALUE -999
 
 void tagger_variables(){
@@ -46,13 +46,15 @@ void tagger_variables(){
 	rctyp = (int*) malloc(sizeof(int)*num2);
 	
 	//tracks
-	Float_t *trk_z0,*trk_d0,*trch2;
+	Float_t *trk_z0,*trk_d0,*trch2,*tsphi;
 	Int_t *trk_atIP, *trndf;
 	trk_z0 = (float*) malloc(sizeof(float)*num2);
 	trk_d0 = (float*) malloc(sizeof(float)*num2);
 	trch2 = (float*) malloc(sizeof(float)*num2);
+	tsphi=(float*) malloc(sizeof(float)*num2);
 	trk_atIP = (int*) malloc(sizeof(int)*num2);
 	trndf = (int*) malloc(sizeof(int)*num2);
+	
 	Int_t trshn[10000][12];
 	Float_t cov[10000][15];
 	
@@ -70,8 +72,11 @@ void tagger_variables(){
 	
 	////TREES FOR MVA//////////////////////////////////////
 	int vtx_cat; //0 for novertex and 1 for recovertex
+	int lep_cat; //0 for nosoftlepton 1 for softmuon 2 for softelectron
 	int n_sv; //number of SV per jet in RecoVertex category
+	int n_lep;
 	int n_trk_from_sv;
+	int n_trk_in_jet;
 	double fd_sig_xy_sv; 
 	double fd_sig_xyz_sv;
 	double corrected_mass_sv;
@@ -79,10 +84,41 @@ void tagger_variables(){
 	double dR_sv_jet;
 	double MassEnergyFraction_sv;
 	double Boost_sv;
-	
+	double SIP_sig_xy_trk1;
+	double SIP_sig_xy_trk2;
+	double SIP_sig_xyz_trk1;
+	double SIP_sig_xyz_trk2;
+	double SIP_sig_xyz_lep1;
+	double SIP_sig_xyz_lep2;
+	double eta_rel_trk1;
+	double eta_rel_trk2;
+	double eta_rel_lep1;
+	double eta_rel_lep2;
+	double pt_rel_trk1;
+	double pt_rel_trk2;
+	double pt_rel_lep1;
+	double pt_rel_lep2;
+	double pt_rel_permom_trk1;
+	double pt_rel_permom_trk2;
+	double pl_rel_trk1;
+	double pl_rel_trk2;
+	double pl_rel_permom_trk1;
+	double pl_rel_permom_trk2;
+	double dR_jet_trk1;
+	double dR_jet_trk2;
+	double dR_jet_lep1;
+	double dR_jet_lep2;
+	double Et_trk_jet;
+	double dR_jet_tot_trk;
+	double pt_lj_lep1;
+	double pt_lj_lep2;
+	double pl_rel_perjetmom_lep1;
+	double pl_rel_perjetmom_lep2;
 	
    	TTree *tree = new TTree("bb_tree", "bb_tree");
    	tree->Branch("vertex_cat", &vtx_cat, "vertex_cat/I");
+   	tree->Branch("lepton_cat", &lep_cat, "lepton_cat/I");
+   	//Secondary vertex variables
         tree->Branch("n_SV", &n_sv, "n_SV/I");
         tree->Branch("n_trk_from_SV", &n_trk_from_sv, "n_trk_from_SV/I");
         tree->Branch("fd_sig_xy_SV", &fd_sig_xy_sv, "fd_sig_xy_SV/D");
@@ -92,6 +128,41 @@ void tagger_variables(){
         tree->Branch("dR_SV_JET", &dR_sv_jet, "dR_SV_JET/D");
         tree->Branch("MassEnergyFraction_SV", &MassEnergyFraction_sv, "MassEnergyFraction_SV/D");
         tree->Branch("Boost_SV", &Boost_sv, "Boost_SV/D");
+        //tracks clustered in jet variables
+        tree->Branch("n_trk_in_Jet", &n_trk_in_jet, "n_trk_in_Jet/I");
+        tree->Branch("SIP_sig_xy_TRK1", &SIP_sig_xy_trk1, "SIP_sig_xy_TRK1/D");
+        tree->Branch("SIP_sig_xy_TRK2", &SIP_sig_xy_trk2, "SIP_sig_xy_TRK2/D");
+        tree->Branch("SIP_sig_xyz_TRK1", &SIP_sig_xyz_trk1, "SIP_sig_xyz_TRK1/D");
+        tree->Branch("SIP_sig_xyz_TRK2", &SIP_sig_xyz_trk2, "SIP_sig_xyz_TRK2/D");
+        tree->Branch("eta_rel_TRK1", &eta_rel_trk1, "eta_rel_TRK1/D");
+        tree->Branch("eta_rel_TRK2", &eta_rel_trk2, "eta_rel_TRK2/D");
+        tree->Branch("pt_rel_TRK1", &pt_rel_trk1, "pt_rel_TRK1/D");
+        tree->Branch("pt_rel_TRK2", &pt_rel_trk2, "pt_rel_TRK2/D");
+        tree->Branch("pt_rel_permom_TRK1", &pt_rel_permom_trk1, "pt_rel_permom_TRK1/D");
+        tree->Branch("pt_rel_permom_TRK2", &pt_rel_permom_trk2, "pt_rel_permom_TRK2/D");
+        tree->Branch("pl_rel_TRK1", &pl_rel_trk1, "pl_rel_TRK1/D");
+        tree->Branch("pl_rel_TRK2", &pl_rel_trk2, "pl_rel_TRK2/D");
+        tree->Branch("pl_rel_permom_TRK1", &pl_rel_permom_trk1, "pl_rel_permom_TRK1/D");
+        tree->Branch("pl_rel_permom_TRK2", &pl_rel_permom_trk2, "pl_rel_permom_TRK2/D");
+        tree->Branch("dR_jet_TRK1", &dR_jet_trk1, "dR_jet_TRK2/D");
+        tree->Branch("dR_jet_TRK2", &dR_jet_trk2, "dR_jet_TRK1/D");
+        tree->Branch("dR_jet_tot_TRK", &dR_jet_tot_trk, "dR_jet_tot_TRK/D");
+        tree->Branch("Et_trk_Jet", &Et_trk_jet, "Et_trk_Jet/D");
+        //lepton variables
+        tree->Branch("n_LEP", &n_lep, "n_LEP/I");
+        tree->Branch("SIP_sig_xyz_LEP1", &SIP_sig_xyz_lep1, "SIP_sig_xyz_LEP1/D");
+        tree->Branch("SIP_sig_xyz_LEP2", &SIP_sig_xyz_lep2, "SIP_sig_xyz_LEP2/D");
+        tree->Branch("eta_rel_LEP1", &eta_rel_lep1, "eta_rel_LEP1/D");
+        tree->Branch("eta_rel_LEP2", &eta_rel_lep2, "eta_rel_LEP2/D");
+        tree->Branch("pt_rel_LEP1", &pt_rel_lep1, "pt_rel_LEP1/D");
+        tree->Branch("pt_rel_LEP2", &pt_rel_lep2, "pt_rel_LEP2/D");
+        tree->Branch("dR_jet_LEP1", &dR_jet_lep1, "dR_jet_LEP2/D");
+        tree->Branch("dR_jet_LEP2", &dR_jet_lep2, "dR_jet_LEP1/D");
+        tree->Branch("pt_lj_LEP1", &pt_lj_lep1, "pt_lj_LEP1/D");
+        tree->Branch("pt_lj_LEP2", &pt_lj_lep2, "pt_lj_LEP2/D");
+        tree->Branch("pl_rel_perjetmom_LEP1", &pl_rel_perjetmom_lep1, "pl_rel_perjetmom_LEP1/D");
+        tree->Branch("pl_rel_perjetmom_LEP2", &pl_rel_perjetmom_lep2, "pl_rel_perjetmom_LEP2/D");
+        
         ////////////////////////////////////////////////////////
 	
 	
@@ -132,6 +203,7 @@ void tagger_variables(){
 	fChain->SetBranchAddress("tszze",trk_z0);
 	fChain->SetBranchAddress("trsip", trk_atIP);
         fChain->SetBranchAddress("tsdze", trk_d0);
+        fChain->SetBranchAddress("tsphi", tsphi);
         fChain->SetBranchAddress("tscov", cov);
         fChain->SetBranchAddress("trch2", trch2);
 	fChain->SetBranchAddress("trndf", trndf);
@@ -153,8 +225,10 @@ void tagger_variables(){
 	
 	TLorentzVector reco,vtx_momentum,all_trk_in_jet;
 	TVector3  B_hadron, C_hadron;
-	TVector3  jet_mo,jet_axis,PV,err_PV,SV,reco_v,flight_dir;
-	int  index_of_jet,index_of_vertex,di,counter_sv;
+	TVector3  jet_mo,jet_axis,PV,err_PV,SV,reco_v,flight_dir,PCA;
+	double ip_xyz_err,ip_xy_err,x_err,y_err,z_err,d0_err,z0_err,phi_err;
+	signed int sign;
+	int  index_of_jet,index_of_vertex,di,counter_sv,counter_trk,counter_lep,index_of_trk_1,index_of_trk_2;
 	double delta_R,delta_R_min;
 	double mom,theta;
 	double X_val,Y_val,pt_v=0,energy_v=0,energy_j=0;;
@@ -194,12 +268,14 @@ void tagger_variables(){
   			sprintf(Jet[k].vertex_category,"NoVertex");
   			sprintf(Jet[k].lepton_category,"NoSoftLepton");
   			Jet[k].num_SV=0;
+  			Jet[k].num_lep=0;
   			for(i=0;i<50;i++){
   				Jet[k].SV_indices[i]=-1;
   				}
   			Jet[k].num_trk=0;
   			for(i=0;i<500;i++){
   				Jet[k].trk_indices[i]=-1;
+  				Jet[k].lep_indices[i]=-1;
   				}
   			}
   		//vertex
@@ -226,6 +302,11 @@ void tagger_variables(){
   			Track[k].t.SetPxPyPzE(0.,0.,0.,0.);
   			Track[k].d0=0;
   			Track[k].z0=0;
+  			Track[k].phi=0;
+  			Track[k].sd0=0;
+  			Track[k].sip=0;
+  			Track[k].sd0_err=0;
+  			Track[k].sip_err=0;
   			Track[k].chi2=0;
   			Track[k].ndf=0;
   			for(i=0;i<15;i++){
@@ -449,11 +530,52 @@ void tagger_variables(){
   				Track[i].t.SetPxPyPzE(rcmox[i],rcmoy[i],rcmoz[i],rcene[i]);
   				Track[i].d0=trk_d0[trk_atIP[rcftr[i]]];
   				Track[i].z0=trk_z0[trk_atIP[rcftr[i]]];
-  				Track[i].chi2=trch2[rcftr[i]];
-  				Track[i].ndf=trndf[rcftr[i]];
+  				Track[i].phi=tsphi[trk_atIP[rcftr[i]]];
   				for(n=0;n<15;n++){
   					Track[i].cov[n]=cov[trk_atIP[rcftr[i]]][n];
   					}
+  				//signed IP only if trk is matched with jet
+  				if(trk_is_matched_with_jet[i]!=-1){
+  				
+	  				PCA.SetX(-Track[i].d0*TMath::Sin(Track[i].phi));
+				  	PCA.SetY(Track[i].d0*TMath::Cos(Track[i].phi));
+					PCA.SetZ(Track[i].z0);
+					
+					//variance(sigma squared)
+					d0_err=Track[i].cov[0];
+					phi_err=Track[i].cov[2];
+					z0_err=Track[i].cov[9];
+					//variance
+					x_err=d0_err*pow(sin(Track[i].phi),2)+phi_err*pow(Track[i].d0*cos(Track[i].phi),2);
+					y_err=d0_err*pow(cos(Track[i].phi),2)+phi_err*pow(Track[i].d0*sin(Track[i].phi),2);
+					z_err=z0_err;
+					ip_xyz_err=sqrt(x_err*pow(PCA.X(),2)+y_err*pow(PCA.Y(),2)+z_err*pow(PCA.Z(),2))/PCA.Mag();
+					ip_xy_err=sqrt(x_err*pow(PCA.X(),2)+y_err*pow(PCA.Y(),2))/(sqrt(PCA.X()*PCA.X()+PCA.Y()*PCA.Y()));
+					
+					jet_axis.SetXYZ(jmox[trk_is_matched_with_jet[i]],jmoy[trk_is_matched_with_jet[i]],
+					jmoz[trk_is_matched_with_jet[i]]);
+					
+					if(PCA*jet_axis>0){
+						Track[i].sd0=sqrt(PCA.X()*PCA.X()+PCA.Y()*PCA.Y());
+						Track[i].sip=PCA.Mag();
+						Track[i].sd0_err=ip_xy_err;
+						Track[i].sip_err=ip_xyz_err;
+						}
+					else if(PCA*jet_axis<0){
+						Track[i].sd0=(-1)*sqrt(PCA.X()*PCA.X()+PCA.Y()*PCA.Y());
+						Track[i].sip=(-1)*PCA.Mag();
+						Track[i].sd0_err=ip_xy_err;
+						Track[i].sip_err=ip_xyz_err;
+						}
+	  				}
+	  				
+	  			/*cout<<"---------------------------------------------------------"<<endl;
+  				cout<<"----------------QUI ----------------------QUI---------------------------"<<endl;
+  				cout<<" d0: "<<Track[i].d0<<" VS sd0"<<Track[i].sd0<<endl;
+  				cout<<" err d0: "<<sqrt(Track[i].cov[0])<<" VS sd0"<<Track[i].sd0_err<<endl;*/
+  				
+  				Track[i].chi2=trch2[rcftr[i]];
+  				Track[i].ndf=trndf[rcftr[i]];
   				for(n=0;n<12;n++){
   					Track[i].sub_det_hits[n]=trshn[rcftr[i]][n];
   					}
@@ -531,14 +653,24 @@ void tagger_variables(){
   				sprintf(Jet[n].vertex_category,"RecoVertex");
   				}
   			for(k=0;k<Jet[n].num_trk;k++){
-  				if(abs(rctyp[Jet[n].trk_indices[k]])==13&&Track[Jet[n].trk_indices[k]].selected==true){
+  				if(abs(rctyp[Jet[n].trk_indices[k]])==13&&Track[Jet[n].trk_indices[k]].selected==true&&lep_selection(Track[Jet[n].trk_indices[k]])==true){
   					sprintf(Jet[n].lepton_category,"SoftMuon");
   					break;
   					}
-  				if(abs(rctyp[Jet[n].trk_indices[k]])==11&&Track[Jet[n].trk_indices[k]].selected==true){
+  				if(abs(rctyp[Jet[n].trk_indices[k]])==11&&Track[Jet[n].trk_indices[k]].selected==true&&lep_selection(Track[Jet[n].trk_indices[k]])==true){
   					sprintf(Jet[n].lepton_category,"SoftElectron");
   					}
   				}
+  			counter_lep=0;
+  			for(k=0;k<Jet[n].num_trk;k++){
+  				if(Track[Jet[n].trk_indices[k]].selected==true){
+  					if(abs(rctyp[Jet[n].trk_indices[k]])==13 || abs(rctyp[Jet[n].trk_indices[k]])==11){
+  						Jet[n].lep_indices[counter_lep]=Jet[n].trk_indices[k];
+  						counter_lep++;
+  						}
+  					}
+  				}
+  			Jet[n].num_lep=counter_lep;
   			}
   		if(ientry<5){
   			cout<<" "<<endl;
@@ -600,10 +732,54 @@ void tagger_variables(){
   				}
   			}	*/
   			}
+  		////////////////////////////////////////////////////////////////////////////////////////
+  		///////////////////////////// FILL TREE ////////////////////////////////////////////////
+  		////////////////////////////////////////////////////////////////////////////////////////
   			
   		for(k=0;k<nj;k++){
   			if(Jet[k].selected==true && strcmp(Jet[k].flavour_tag,choice)==0){
-  			
+  				
+  				counter_trk=0;
+  				for(n=0;n<Jet[k].num_trk;n++){
+  					if(Track[Jet[k].trk_indices[n]].selected==true){
+  						counter_trk++;
+  						}
+  					}
+  				n_trk_in_jet=counter_trk;
+  				find_first_trk(Jet[k],Track,&index_of_trk_1,&index_of_trk_2,false);
+  				/*cout<<"---------------------------------------------------------"<<endl;
+  				cout<<"----------------QUI ----------------------QUI---------------------------"<<endl;
+  				cout<<"index 1: "<<index_of_trk_1<<endl;
+  				cout<<"index 2: "<<index_of_trk_2<<endl;*/
+  				SIP_sig_xy_trk1=Track[index_of_trk_1].sd0/Track[index_of_trk_1].sd0_err;
+  				SIP_sig_xy_trk2=Track[index_of_trk_2].sd0/Track[index_of_trk_2].sd0_err;
+  				SIP_sig_xyz_trk1=Track[index_of_trk_1].sip/Track[index_of_trk_1].sip_err;
+  				SIP_sig_xyz_trk2=Track[index_of_trk_2].sip/Track[index_of_trk_2].sip_err;
+  				sign= (Track[index_of_trk_1].t.Theta()-Jet[k].j.Theta())/abs(Track[index_of_trk_1].t.Theta()-Jet[k].j.Theta());
+  				eta_rel_trk1=-sign*log(tan(abs(Track[index_of_trk_1].t.Theta()-Jet[k].j.Theta())/2));
+  				sign= (Track[index_of_trk_2].t.Theta()-Jet[k].j.Theta())/abs(Track[index_of_trk_2].t.Theta()-Jet[k].j.Theta());
+  				eta_rel_trk2=-sign*log(tan(abs(Track[index_of_trk_2].t.Theta()-Jet[k].j.Theta())/2));
+  				
+  				pt_rel_trk1=Track[index_of_trk_1].t.Vect().Perp(Jet[k].j.Vect());
+  				pt_rel_trk2=Track[index_of_trk_2].t.Vect().Perp(Jet[k].j.Vect());
+  				pt_rel_permom_trk1=pt_rel_trk1/Track[index_of_trk_1].t.Vect().Mag();
+  				pt_rel_permom_trk2=pt_rel_trk2/Track[index_of_trk_2].t.Vect().Mag();
+  				
+  				pl_rel_trk1=Track[index_of_trk_1].t.Vect().Dot(Jet[k].j.Vect())/Jet[k].j.Vect().Mag();
+  				pl_rel_trk2=Track[index_of_trk_2].t.Vect().Dot(Jet[k].j.Vect())/Jet[k].j.Vect().Mag();
+  				pl_rel_permom_trk1=pl_rel_trk1/Track[index_of_trk_1].t.Vect().Mag();
+  				pl_rel_permom_trk2=pl_rel_trk2/Track[index_of_trk_2].t.Vect().Mag();
+  				
+  				dR_jet_trk1=Track[index_of_trk_1].t.DeltaR(Jet[k].j);
+  				dR_jet_trk2=Track[index_of_trk_2].t.DeltaR(Jet[k].j);
+  				
+  				all_trk_in_jet.SetPxPyPzE(0.,0.,0.,0.);
+  				for(n=0;n<Jet[k].num_trk;n++){
+  					all_trk_in_jet=all_trk_in_jet+Track[Jet[k].trk_indices[n]].t;
+  					}
+  				Et_trk_jet=all_trk_in_jet.Et()/Jet[k].j.Et();
+  				dR_jet_tot_trk=all_trk_in_jet.DeltaR(Jet[k].j);
+  				
   				if(strcmp(Jet[k].vertex_category,"RecoVertex")==0){
   				
   					 vtx_cat=1;
@@ -675,6 +851,75 @@ void tagger_variables(){
 	  			else{
 	  				cout<<"stem a sbaggjò qualche cos"<<endl;
 	  				}
+	  				
+	  			if(strcmp(Jet[k].lepton_category,"SoftMuon")==0 || strcmp(Jet[k].lepton_category,"SoftElectron")==0){
+	  			
+		  			if(strcmp(Jet[k].lepton_category,"SoftMuon")==0){
+		  				lep_cat=1;
+		  				}
+		  			else if(strcmp(Jet[k].lepton_category,"SoftElectron")==0){
+		  				lep_cat=2;
+		  				}
+		  			n_lep=Jet[k].num_lep;
+		  			if(Jet[k].num_lep==1){	
+		  				SIP_sig_xyz_lep1=Track[Jet[k].lep_indices[0]].sip/Track[Jet[k].lep_indices[0]].sip_err;
+		  				SIP_sig_xyz_lep2=DEFAULT_VALUE;
+		  				sign= (Track[Jet[k].lep_indices[0]].t.Theta()-Jet[k].j.Theta())/abs(Track[Jet[k].lep_indices[0]].t.Theta()-Jet[k].j.Theta());
+		  				eta_rel_lep1=-sign*log(tan(abs(Track[Jet[k].lep_indices[0]].t.Theta()-Jet[k].j.Theta())/2));
+		  				eta_rel_lep2=DEFAULT_VALUE;
+		  				pt_rel_lep1=Track[Jet[k].lep_indices[0]].t.Perp(Jet[k].j.Vect());
+		  				pt_rel_lep2=DEFAULT_VALUE;
+		  				dR_jet_lep1=Track[Jet[k].lep_indices[0]].t.DeltaR(Jet[k].j);
+		  				dR_jet_lep2=DEFAULT_VALUE;
+		  				pt_lj_lep1=Track[Jet[k].lep_indices[0]].t.Pt()/Jet[k].j.Pt();
+		  				pt_lj_lep2=DEFAULT_VALUE;
+		  				pl_rel_perjetmom_lep1=Track[Jet[k].lep_indices[0]].t.Vect().Dot(Jet[k].j.Vect())/Jet[k].j.Vect().Mag2();
+		  				pl_rel_perjetmom_lep2=DEFAULT_VALUE;
+		  				}
+		  			else if(Jet[k].num_lep>1){
+		  				find_first_trk(Jet[k],Track,&index_of_trk_1,&index_of_trk_2,true);
+		  				SIP_sig_xyz_lep1=Track[index_of_trk_1].sip/Track[index_of_trk_1].sip_err;
+  						SIP_sig_xyz_lep2=Track[index_of_trk_2].sip/Track[index_of_trk_2].sip_err;
+  						sign= (Track[index_of_trk_1].t.Theta()-Jet[k].j.Theta())/abs(Track[index_of_trk_1].t.Theta()-Jet[k].j.Theta());
+  						eta_rel_lep1=-sign*log(tan(abs(Track[index_of_trk_1].t.Theta()-Jet[k].j.Theta())/2));
+  						sign= (Track[index_of_trk_2].t.Theta()-Jet[k].j.Theta())/abs(Track[index_of_trk_2].t.Theta()-Jet[k].j.Theta());
+  						eta_rel_lep2=-sign*log(tan(abs(Track[index_of_trk_2].t.Theta()-Jet[k].j.Theta())/2));
+  						pt_rel_lep1=Track[index_of_trk_1].t.Perp(Jet[k].j.Vect());
+  						pt_rel_lep2=Track[index_of_trk_2].t.Perp(Jet[k].j.Vect());
+  						
+  						dR_jet_lep1=Track[index_of_trk_1].t.DeltaR(Jet[k].j);
+  						dR_jet_lep2=Track[index_of_trk_2].t.DeltaR(Jet[k].j);
+  						
+  						pt_lj_lep1=Track[index_of_trk_1].t.Pt()/Jet[k].j.Pt();
+  						pt_lj_lep2=Track[index_of_trk_2].t.Pt()/Jet[k].j.Pt();
+  						
+  						pl_rel_perjetmom_lep1=Track[index_of_trk_1].t.Vect().Dot(Jet[k].j.Vect())/Jet[k].j.Vect().Mag2();
+  						pl_rel_perjetmom_lep2=Track[index_of_trk_2].t.Vect().Dot(Jet[k].j.Vect())/Jet[k].j.Vect().Mag2();
+  						}
+  					else{
+		  				cout<<"stem a sbaggjò qualche cos"<<endl;
+	  					}
+		  			}
+		  		else if(strcmp(Jet[k].lepton_category,"NoSoftLepton")==0){
+		  			lep_cat=0;
+		  			n_lep=DEFAULT_VALUE;
+		  			SIP_sig_xyz_lep1=DEFAULT_VALUE;
+		  			SIP_sig_xyz_lep2=DEFAULT_VALUE;
+		  			eta_rel_lep1=DEFAULT_VALUE;
+		  			eta_rel_lep2=DEFAULT_VALUE;
+		  			pt_rel_lep1=DEFAULT_VALUE;
+		  			pt_rel_lep2=DEFAULT_VALUE;
+		  			dR_jet_lep1=DEFAULT_VALUE;
+		  			dR_jet_lep2=DEFAULT_VALUE;
+		  			pt_lj_lep1=DEFAULT_VALUE;
+		  			pt_lj_lep2=DEFAULT_VALUE;
+		  			pl_rel_perjetmom_lep1=DEFAULT_VALUE;
+		  			pl_rel_perjetmom_lep2=DEFAULT_VALUE;
+		  			}
+		  		else{
+		  			cout<<"stem a sbaggjò qualche cos"<<endl;
+	  				}
+	  				
 	  			
 	  			tree->Fill();
   				}

@@ -10,6 +10,8 @@ typedef struct {
 	int SV_indices[50]; //indices of SVs associated to jet
 	int num_trk; //num of trk associated to the jet
 	int trk_indices[500]; //indices of trks associated to jet
+	int num_lep; //num of leptons associated to the track
+	int lep_indices[500];
 	}Jet_struct;
 	
 typedef struct {
@@ -32,6 +34,11 @@ typedef struct {
 	TLorentzVector t;
 	double d0;
 	double z0;
+	double phi;
+	double sd0; //signed 2D IP
+	double sd0_err;
+	double sip; //signed 3D IP
+	double sip_err;
 	double chi2;
 	int ndf;
 	double cov[15];
