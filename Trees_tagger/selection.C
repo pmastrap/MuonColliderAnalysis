@@ -59,6 +59,19 @@ bool jet_selection(Track_struct* trk ,Jet_struct jt){
 	return false;
 	
 	}
+
+void order_tracks(Jet_struct jt, Track_struct *trk, int *index){
+	double vect[1000];
+	int k=0;
+	//sort trk by 2D impact-param significance (decreasing)
+	for(k=0;k<jt.num_trk;k++){
+	  	vect[k]=-9999;
+	  	if(trk[jt.trk_indices[k]].selected==true){
+	  		vect[k]=trk[jt.trk_indices[k]].sd0/trk[jt.trk_indices[k]].sd0_err;
+	  		}		
+	  	}
+	 TMath::Sort(jt.num_trk,vect,index,true);
+	  }
 	
 void find_first_trk(Jet_struct jt, Track_struct *trk,int *one,int *two, bool lepyn){
 	int index[1000];

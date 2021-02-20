@@ -3,6 +3,7 @@
 #include "selection.C"
 
 #define dR_Jet 1.0
+#define inv_mass_thr 1.5
 #define DEFAULT_VALUE -999
 
 void tagger_variables(){
@@ -114,8 +115,10 @@ void tagger_variables(){
 	double pt_lj_lep2;
 	double pl_rel_perjetmom_lep1;
 	double pl_rel_perjetmom_lep2;
+	double SIP_sig_xy_trk_above_trh;
+	double SIP_sig_xyz_trk_above_trh;
 	
-   	TTree *tree = new TTree("bb_tree", "bb_tree");
+   	TTree *tree = new TTree("tree_tagging_var", "tree_tagging_var");
    	tree->Branch("vertex_cat", &vtx_cat, "vertex_cat/I");
    	tree->Branch("lepton_cat", &lep_cat, "lepton_cat/I");
    	//Secondary vertex variables
@@ -148,6 +151,8 @@ void tagger_variables(){
         tree->Branch("dR_jet_TRK2", &dR_jet_trk2, "dR_jet_TRK2/D");
         tree->Branch("dR_jet_tot_TRK", &dR_jet_tot_trk, "dR_jet_tot_TRK/D");
         tree->Branch("Et_trk_Jet", &Et_trk_jet, "Et_trk_Jet/D");
+        tree->Branch("SIP_sig_xy_TRK_above_trh", &SIP_sig_xy_trk_above_trh, "SIP_sig_xy_TRK_above_trh/D");
+        tree->Branch("SIP_sig_xyz_TRK_above_trh", &SIP_sig_xyz_trk_above_trh, "SIP_sig_xyz_TRK_above_trh/D");
         //lepton variables
         tree->Branch("n_LEP", &n_lep, "n_LEP/I");
         tree->Branch("SIP_sig_xyz_LEP1", &SIP_sig_xyz_lep1, "SIP_sig_xyz_LEP1/D");
@@ -166,11 +171,11 @@ void tagger_variables(){
         ////////////////////////////////////////////////////////
 	
 	
-	//WHEN YOU CHANGE THE PATH CHANGE ALSO THIS FLAG
-	char choice[]="b";
+	//WHEN YOU CHANGE THE PATH CHANGE ALSO THIS FLAG ("b" "c" or "o")
+	char choice[]="c";
 
 	TChain* fChain = new TChain("fChain");
-   	fChain->Add("/home/paola/Scrivania/xml_aggiornati/3/ntuple_bb_1000_mod_3.root/MyLCTuple");
+   	fChain->Add("/home/paola/Scrivania/xml_aggiornati/3/ntuple_cc_1000_mod_3.root/MyLCTuple");
 	
 	fChain->SetBranchAddress("nmcp", &nmcp);
 	fChain->SetBranchAddress("mcpdg", mcpdg);
@@ -223,14 +228,14 @@ void tagger_variables(){
 	fChain->SetBranchAddress("jmoz", jmoz);
 	fChain->SetBranchAddress("jene", jene);
 	
-	TLorentzVector reco,vtx_momentum,all_trk_in_jet;
+	TLorentzVector reco,vtx_momentum,all_trk_in_jet,trk_momentum;
 	TVector3  B_hadron, C_hadron;
 	TVector3  jet_mo,jet_axis,PV,err_PV,SV,reco_v,flight_dir,PCA;
 	double ip_xyz_err,ip_xy_err,x_err,y_err,z_err,d0_err,z0_err,phi_err;
 	signed int sign;
 	int  index_of_jet,index_of_vertex,di,counter_sv,counter_trk,counter_lep,index_of_trk_1,index_of_trk_2;
 	double delta_R,delta_R_min;
-	double mom,theta;
+	double mom,theta,inv_mass;
 	double X_val,Y_val,pt_v=0,energy_v=0,energy_j=0;;
 	double xy_flight_dist,xyz_flight_dist,err_xy_fd,err_xyz_fd,termX,termY,termZ;
 	int j_b[10]={-1}, j_c[10]={-1}, j_other[10]={-1}, j_light[10]={-1}, j_index[10]={-1};
@@ -238,7 +243,8 @@ void tagger_variables(){
 	
 	int is_matched_with_vertex[100]={0},is_matched_with_jet[100]={-1},vtx_jet_matrix[100][100]={0};
 	int vtx_trk_vector[100]={0},vtx_trk_matrix[100][100]={0};
-	int jet_to_trk_matrix[100][500]={0},jet_to_trk_vector[100]={0},trk_is_matched_with_jet[100]={-1};
+	int jet_to_trk_matrix[100][100]={0},jet_to_trk_vector[100]={0},trk_is_matched_with_jet[100]={-1};
+	int ordered_indeces[100];
 	
 	//entry cycle
 	//fChain->GetEntries();
@@ -250,7 +256,7 @@ void tagger_variables(){
   		
   		for(k=0;k<100;k++){ 
   			vtx_trk_vector[k]=0;	is_matched_with_jet[k]=-1;	 is_matched_with_vertex[k]=0;
-  			jet_to_trk_vector[k]=0; 	trk_is_matched_with_jet[k]=-1;
+  			jet_to_trk_vector[k]=0; 	trk_is_matched_with_jet[k]=-1;	ordered_indeces[k]=-1;
   			for(n=0;n<100;n++){
   				vtx_trk_matrix[k][n]=-1;	vtx_jet_matrix[k][n]=-1;	jet_to_trk_matrix[k][n]=-1;
   				}
@@ -450,6 +456,13 @@ void tagger_variables(){
 			nj_set=nj_c;
 			for(i=0;i<nj_c;i++){
 				j_index[i]=j_c[i];
+				}
+			}
+		
+		if(choice[0]=='o'){
+			nj_set=nj_light;
+			for(i=0;i<nj_light;i++){
+				j_index[i]=j_light[i];
 				}
 			}
 			
@@ -773,6 +786,25 @@ void tagger_variables(){
   				dR_jet_trk1=Track[index_of_trk_1].t.DeltaR(Jet[k].j);
   				dR_jet_trk2=Track[index_of_trk_2].t.DeltaR(Jet[k].j);
   				
+  				
+  				order_tracks(Jet[k],Track,ordered_indeces);
+  				inv_mass=0;
+  				n=0;
+  				trk_momentum.SetPxPyPzE(0.,0.,0.,0.);
+  				while(ordered_indeces[n]!=-1 && inv_mass<inv_mass_thr){
+  					trk_momentum=trk_momentum+Track[Jet[k].trk_indices[ordered_indeces[n]]].t;
+  					inv_mass=trk_momentum.M();
+  					n++;
+  					}
+  				if(inv_mass>inv_mass_thr){
+  					SIP_sig_xy_trk_above_trh=(Track[Jet[k].trk_indices[ordered_indeces[n-1]]].sd0)/(Track[Jet[k].trk_indices[ordered_indeces[n-1]]].sd0_err);
+  					SIP_sig_xyz_trk_above_trh=(Track[Jet[k].trk_indices[ordered_indeces[n-1]]].sip)/(Track[Jet[k].trk_indices[ordered_indeces[n-1]]].sip_err);
+  					}
+  				else{
+  					SIP_sig_xy_trk_above_trh=DEFAULT_VALUE;
+  					SIP_sig_xyz_trk_above_trh=DEFAULT_VALUE;
+  					}
+
   				all_trk_in_jet.SetPxPyPzE(0.,0.,0.,0.);
   				for(n=0;n<Jet[k].num_trk;n++){
   					all_trk_in_jet=all_trk_in_jet+Track[Jet[k].trk_indices[n]].t;
@@ -929,8 +961,8 @@ void tagger_variables(){
   		
   	tree->Print();
   		
-  	//FILL TREES FOR MVA	
-	TFile *outfile = new TFile("./bb_tree_forMVA.root", "recreate");
+  	//FILL TREES FOR MVA
+	TFile *outfile = new TFile(Form("./%s_tree_forMVA.root",choice), "recreate");
       	outfile->cd("");	
       	tree->Write();
       	outfile->Close();
