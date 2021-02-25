@@ -1,4 +1,4 @@
-#define DIM 45
+#define DIM 49
 
 void compare_variables_fortag(string FILEIN1="b_tree_forMVA.root", string FILEIN2="c_tree_forMVA.root", string FILEIN3 = "nofile"){
 
@@ -6,8 +6,8 @@ void compare_variables_fortag(string FILEIN1="b_tree_forMVA.root", string FILEIN
 	"energy_ratio_SV","dR_SV_JET","MassEnergyFraction_SV","Boost_SV","n_trk_in_Jet","SIP_sig_xy_TRK1","SIP_sig_xy_TRK2","SIP_sig_xyz_TRK1",
 	"SIP_sig_xyz_TRK2","eta_rel_TRK1","eta_rel_TRK2","pt_rel_TRK1","pt_rel_TRK2","pt_rel_permom_TRK1","pt_rel_permom_TRK2","pl_rel_TRK1",
 	"pl_rel_TRK2","pl_rel_permom_TRK1","pl_rel_permom_TRK2","dR_jet_TRK1","dR_jet_TRK2", "dR_jet_tot_TRK", "Et_trk_Jet",
-	"SIP_sig_xy_TRK_above_trh","SIP_sig_xyz_TRK_above_trh","n_LEP","SIP_sig_xyz_LEP1","SIP_sig_xyz_LEP2","eta_rel_LEP1","eta_rel_LEP2",
-	"pt_rel_LEP1","pt_rel_LEP2","dR_jet_LEP1","dR_jet_LEP2", "pt_lj_LEP1","pt_lj_LEP2","pl_rel_perjetmom_LEP1","pl_rel_perjetmom_LEP2"};
+	"SIP_sig_xy_TRK_above_trh","SIP_sig_xyz_TRK_above_trh","dist_trk1_Jet_atPCA","dist_trk2_Jet_atPCA","decay_length_TRK1","decay_length_TRK2",
+	"n_LEP","SIP_sig_xyz_LEP1","SIP_sig_xyz_LEP2","eta_rel_LEP1","eta_rel_LEP2","pt_rel_LEP1","pt_rel_LEP2","dR_jet_LEP1","dR_jet_LEP2", 		"pt_lj_LEP1","pt_lj_LEP2","pl_rel_perjetmom_LEP1","pl_rel_perjetmom_LEP2"};
 	
 	int n_bins[DIM];
 	double low_edge[DIM],up_edge[DIM];
@@ -69,6 +69,7 @@ void compare_variables_fortag(string FILEIN1="b_tree_forMVA.root", string FILEIN
 	  	h1[i]->SetName(Form("%s_b",str[i].c_str()));
 	  	h1[i]->SetTitle(Form("%s",str[i].c_str()));
 	  	h1[i]->Scale(1/h1[i]->Integral());
+	  	h1[i]->SetMaximum(h1[i]->GetBinContent(h1[i]->GetMaximumBin())+600/100*h1[i]->GetBinContent(h1[i]->GetMaximumBin()));
 	  	//h1->SetMinimum(1e-3);
 	  	//h1->Sumw2();
 	  	h1[i]->GetYaxis()->SetMoreLogLabels();

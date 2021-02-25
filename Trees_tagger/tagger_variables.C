@@ -1,10 +1,13 @@
 //variables for tagger
 #include "heavyhadron_selection.C"
 #include "selection.C"
+#include "evaluate_min_dist.C"
 
 #define dR_Jet 1.0
 #define inv_mass_thr 1.5
 #define DEFAULT_VALUE -999
+#define r_vertex 102.
+#define z_vertex 280.
 
 void tagger_variables(){
 	
@@ -48,16 +51,22 @@ void tagger_variables(){
 	
 	//tracks
 	Float_t *trk_z0,*trk_d0,*trch2,*tsphi;
-	Int_t *trk_atIP, *trndf;
+	Int_t *trk_atIP, *trndf, *trthn;
 	trk_z0 = (float*) malloc(sizeof(float)*num2);
 	trk_d0 = (float*) malloc(sizeof(float)*num2);
 	trch2 = (float*) malloc(sizeof(float)*num2);
 	tsphi=(float*) malloc(sizeof(float)*num2);
 	trk_atIP = (int*) malloc(sizeof(int)*num2);
 	trndf = (int*) malloc(sizeof(int)*num2);
+	trthn = (int*) malloc(sizeof(int)*num2);
+	
 	
 	Int_t trshn[10000][12];
 	Float_t cov[10000][15];
+	double trthpox[1000][50];
+	double trthpoy[1000][50];
+	double trthpoz[1000][50];
+	
 	
 	//vertices
 	Float_t x[1000],y[1000],z[1000],chi[1000],vtcov[1000][6];
@@ -118,6 +127,11 @@ void tagger_variables(){
 	double SIP_sig_xy_trk_above_trh;
 	double SIP_sig_xyz_trk_above_trh;
 	
+	double dist_trk1_jet_atPCA;
+	double dist_trk2_jet_atPCA;
+	double decay_length_trk1;
+	double decay_length_trk2;
+	
    	TTree *tree = new TTree("tree_tagging_var", "tree_tagging_var");
    	tree->Branch("vertex_cat", &vtx_cat, "vertex_cat/I");
    	tree->Branch("lepton_cat", &lep_cat, "lepton_cat/I");
@@ -153,6 +167,10 @@ void tagger_variables(){
         tree->Branch("Et_trk_Jet", &Et_trk_jet, "Et_trk_Jet/D");
         tree->Branch("SIP_sig_xy_TRK_above_trh", &SIP_sig_xy_trk_above_trh, "SIP_sig_xy_TRK_above_trh/D");
         tree->Branch("SIP_sig_xyz_TRK_above_trh", &SIP_sig_xyz_trk_above_trh, "SIP_sig_xyz_TRK_above_trh/D");
+        tree->Branch("dist_trk1_Jet_atPCA", &dist_trk1_jet_atPCA, "dist_trk1_Jet_atPCA/D");
+        tree->Branch("dist_trk2_Jet_atPCA", &dist_trk2_jet_atPCA, "dist_trk2_Jet_atPCA/D");
+        tree->Branch("decay_length_TRK1", &decay_length_trk1, "decay_length_TRK1/D");
+        tree->Branch("decay_length_TRK2", &decay_length_trk2, "decay_length_TRK2/D");
         //lepton variables
         tree->Branch("n_LEP", &n_lep, "n_LEP/I");
         tree->Branch("SIP_sig_xyz_LEP1", &SIP_sig_xyz_lep1, "SIP_sig_xyz_LEP1/D");
@@ -172,10 +190,10 @@ void tagger_variables(){
 	
 	
 	//WHEN YOU CHANGE THE PATH CHANGE ALSO THIS FLAG ("b" "c" or "o")
-	char choice[]="c";
+	char choice[]="b";
 
 	TChain* fChain = new TChain("fChain");
-   	fChain->Add("/home/paola/Scrivania/xml_aggiornati/3/ntuple_cc_1000_mod_3.root/MyLCTuple");
+   	fChain->Add("/home/paola/Scrivania/xml_aggiornati/3/ntuple_bb_1000_mod3_trkadd.root/MyLCTuple");
 	
 	fChain->SetBranchAddress("nmcp", &nmcp);
 	fChain->SetBranchAddress("mcpdg", mcpdg);
@@ -213,6 +231,10 @@ void tagger_variables(){
         fChain->SetBranchAddress("trch2", trch2);
 	fChain->SetBranchAddress("trndf", trndf);
         fChain->SetBranchAddress("trshn",trshn);
+        fChain->SetBranchAddress("trthn",trthn);
+        fChain->SetBranchAddress("trthpox",trthpox);
+        fChain->SetBranchAddress("trthpoy",trthpoy);
+        fChain->SetBranchAddress("trthpoz",trthpoz);
         
         fChain->SetBranchAddress("nvt", &nvt);
         fChain->SetBranchAddress("vtori", id);
@@ -229,10 +251,14 @@ void tagger_variables(){
 	fChain->SetBranchAddress("jene", jene);
 	
 	TLorentzVector reco,vtx_momentum,all_trk_in_jet,trk_momentum;
-	TVector3  B_hadron, C_hadron;
-	TVector3  jet_mo,jet_axis,PV,err_PV,SV,reco_v,flight_dir,PCA;
+	TVector3 B_hadron, C_hadron;
+	TVector3 jet_mo,jet_axis,PV,err_PV,SV,reco_v,flight_dir,PCA;
+	TVector3 first_hit, last_hit;
+	TVector3 PCA_tojet;
+	double min_dist_trk_jet;
 	double ip_xyz_err,ip_xy_err,x_err,y_err,z_err,d0_err,z0_err,phi_err;
 	signed int sign;
+	int max=0;
 	int  index_of_jet,index_of_vertex,di,counter_sv,counter_trk,counter_lep,index_of_trk_1,index_of_trk_2;
 	double delta_R,delta_R_min;
 	double mom,theta,inv_mass;
@@ -248,7 +274,7 @@ void tagger_variables(){
 	
 	//entry cycle
 	//fChain->GetEntries();
-	for(ientry=0; ientry< fChain->GetEntries(); ++ientry){
+	for(ientry=0; ientry<fChain->GetEntries() ; ++ientry){
   		fChain->GetEntry(ientry);
   		
   		//initialization
@@ -685,7 +711,7 @@ void tagger_variables(){
   				}
   			Jet[n].num_lep=counter_lep;
   			}
-  		if(ientry<5){
+  		/*if(ientry<5){
   			cout<<" "<<endl;
   			cout<<"---------------Jet struct----------------------"<<endl;
   			//jet
@@ -726,7 +752,7 @@ void tagger_variables(){
   					}
   				}
   			cout<<" "<<endl;
-  			/*cout<<"---------------Track struct----------------------"<<endl;
+  			cout<<"---------------Track struct----------------------"<<endl;
   			//trk
   			for(k=0;k<nrec;k++){
   			if(rcftr[k]!=-1){
@@ -743,8 +769,8 @@ void tagger_variables(){
   				cout<<"jet index: "<<Track[k].jet_index<<endl;
   				cout<<"selected: "<<Track[k].selected<<endl;
   				}
-  			}	*/
-  			}
+  			}	
+  			}*/
   		////////////////////////////////////////////////////////////////////////////////////////
   		///////////////////////////// FILL TREE ////////////////////////////////////////////////
   		////////////////////////////////////////////////////////////////////////////////////////
@@ -760,10 +786,99 @@ void tagger_variables(){
   					}
   				n_trk_in_jet=counter_trk;
   				find_first_trk(Jet[k],Track,&index_of_trk_1,&index_of_trk_2,false);
+  				
   				/*cout<<"---------------------------------------------------------"<<endl;
   				cout<<"----------------QUI ----------------------QUI---------------------------"<<endl;
   				cout<<"index 1: "<<index_of_trk_1<<endl;
-  				cout<<"index 2: "<<index_of_trk_2<<endl;*/
+  				for(n=0;n<trthn[rcftr[index_of_trk_1]];n++){
+  					cout<<"Coordinate hit "<<n<<" : "<<trthpox[rcftr[index_of_trk_1]][n]<<" "<<
+  					trthpoy[rcftr[index_of_trk_1]][n]<<" "<<trthpoz[rcftr[index_of_trk_1]][n]<<endl;
+  					}
+  				cout<<"index 2: "<<index_of_trk_2<<endl;
+  				for(n=0;n<trthn[rcftr[index_of_trk_2]];n++){
+  					cout<<"Coordinate hit "<<n<<" : "<<trthpox[rcftr[index_of_trk_2]][n]<<" "<<
+  					trthpoy[rcftr[index_of_trk_2]][n]<<" "<<trthpoz[rcftr[index_of_trk_2]][n]<<endl;
+  					}*/
+  					
+  				//FIRST TRACK
+  				first_hit.SetXYZ(trthpox[rcftr[index_of_trk_1]][0],trthpoy[rcftr[index_of_trk_1]][0],
+  				trthpoz[rcftr[index_of_trk_1]][0]);
+  				max=trthn[rcftr[index_of_trk_1]];
+  				for(n=0;n<max;n++){
+  					if(sqrt(pow(trthpox[rcftr[index_of_trk_1]][max-n-1],2)+
+  					pow(trthpoy[rcftr[index_of_trk_1]][max-n-1],2))<r_vertex && 
+  					abs(trthpoz[rcftr[index_of_trk_1]][max-n-1])<z_vertex){
+  						break;
+  						}
+  					}
+  				//cout<<"max-n-1 "<< max-n-1<<endl;
+  				last_hit.SetXYZ(trthpox[rcftr[index_of_trk_1]][max-n-1],trthpoy[rcftr[index_of_trk_1]][max-n-1],
+  				trthpoz[rcftr[index_of_trk_1]][max-n-1]);
+  				/*cout<<"index 1: "<<index_of_trk_1<<endl;
+  				cout<<"Coordinate first hit in vertex detector : "<<first_hit.X()<<" "<<first_hit.Y()<<" "<<
+  				first_hit.Z()<<endl;
+  				cout<<"Coordinate last hit in vertex detector : "<<last_hit.X()<<" "<<last_hit.Y()<<" "<<last_hit.Z()<<endl;*/
+  				
+  				dist_trk1_jet_atPCA=DEFAULT_VALUE;
+  				decay_length_trk1=DEFAULT_VALUE;
+  				
+  				
+  				//2 hits in the vertex detector found
+  				if(n < max-1){
+  					evaluate_min_dist_to_jet2(Jet[k],first_hit,last_hit,&PCA_tojet,&min_dist_trk_jet);
+  					dist_trk1_jet_atPCA=min_dist_trk_jet;
+  					decay_length_trk1=(PCA_tojet-PV).Mag();
+  					
+  					/*if((PCA_tojet-first_hit).Mag()>0.005){
+	  					cout<<"max-n-1 "<< max-n-1<<endl;
+	  					cout<<"Coordinate first hit in vertex detector : "<<first_hit.X()<<" "<<first_hit.Y()<<" "<<
+	  					first_hit.Z()<<endl;
+	  					cout<<"Coordinate last hit in vertex detector : "<<last_hit.X()<<" "<<last_hit.Y()<<" "<<
+	  					last_hit.Z()<<endl;
+	  					cout<<"PCA to jet: "<<PCA_tojet.X()<<" "<<PCA_tojet.Y()<<" "<<PCA_tojet.Z()<<" "<<endl;
+	  					cout<<"min dist : "<<min_dist_trk_jet<<endl;
+  						}*/
+  					}
+  					
+  				//SECOND TRACK
+  				first_hit.SetXYZ(trthpox[rcftr[index_of_trk_2]][0],trthpoy[rcftr[index_of_trk_2]][0],
+  				trthpoz[rcftr[index_of_trk_2]][0]);
+  				max=trthn[rcftr[index_of_trk_2]];
+  				for(n=0;n<max;n++){
+  					if(sqrt(pow(trthpox[rcftr[index_of_trk_2]][max-n-1],2)+
+  					pow(trthpoy[rcftr[index_of_trk_2]][max-n-1],2))<r_vertex && 
+  					abs(trthpoz[rcftr[index_of_trk_2]][max-n-1])<z_vertex){
+  						break;
+  						}
+  					}
+  				//cout<<"max-n-1 "<< max-n-1<<endl;
+  				last_hit.SetXYZ(trthpox[rcftr[index_of_trk_2]][max-n-1],trthpoy[rcftr[index_of_trk_2]][max-n-1],
+  				trthpoz[rcftr[index_of_trk_2]][max-n-1]);
+  				/*cout<<"index 1: "<<index_of_trk_1<<endl;
+  				cout<<"Coordinate first hit in vertex detector : "<<first_hit.X()<<" "<<first_hit.Y()<<" "<<
+  				first_hit.Z()<<endl;
+  				cout<<"Coordinate last hit in vertex detector : "<<last_hit.X()<<" "<<last_hit.Y()<<" "<<last_hit.Z()<<endl;*/
+  				
+  				dist_trk2_jet_atPCA=DEFAULT_VALUE;
+  				decay_length_trk2=DEFAULT_VALUE;
+  				
+  				//2 hits in the vertex detector found
+  				if(n < max-1){
+  					evaluate_min_dist_to_jet2(Jet[k],first_hit,last_hit,&PCA_tojet,&min_dist_trk_jet);
+  					dist_trk2_jet_atPCA=min_dist_trk_jet;
+  					decay_length_trk2=(PCA_tojet-PV).Mag();
+  					
+  					/*if((PCA_tojet-first_hit).Mag()>0.005){
+	  					cout<<"max-n-1 "<< max-n-1<<endl;
+	  					cout<<"Coordinate first hit in vertex detector : "<<first_hit.X()<<" "<<first_hit.Y()<<" "<<
+	  					first_hit.Z()<<endl;
+	  					cout<<"Coordinate last hit in vertex detector : "<<last_hit.X()<<" "<<last_hit.Y()<<" "<<
+	  					last_hit.Z()<<endl;
+	  					cout<<"PCA to jet: "<<PCA_tojet.X()<<" "<<PCA_tojet.Y()<<" "<<PCA_tojet.Z()<<" "<<endl;
+	  					cout<<"min dist : "<<min_dist_trk_jet<<endl;
+  						}*/
+  					}
+  				
   				SIP_sig_xy_trk1=Track[index_of_trk_1].sd0/Track[index_of_trk_1].sd0_err;
   				SIP_sig_xy_trk2=Track[index_of_trk_2].sd0/Track[index_of_trk_2].sd0_err;
   				SIP_sig_xyz_trk1=Track[index_of_trk_1].sip/Track[index_of_trk_1].sip_err;
