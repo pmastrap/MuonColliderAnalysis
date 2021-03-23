@@ -1,0 +1,119 @@
+
+Selezioni applicate:
+
+- TRACCE: pT>1. GeV
+	  chi2/ndf <5 
+	  almeno 4 hit nel vertex detector
+	  
+- LEPTONI: devono aver passato la selezione delle tracce e in più aver pT >2 GeV
+
+-JET: 	  eta < 2.5
+	  pT>10 GeV
+	  almeno due tracce che hanno passato la selezione
+	  
+	  + per il sample bb (cc) solo i jet flaggati come b (c) sono considerati
+	  
+-VERTICI: 2D flight distance significance > 1.5
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+2 independent vertex categories:
+-- RecoVertex: The jet contains one or more secondary vertices. Both infomation on tracks and SVs are used.
+-- NoVertex: Containing jets not assigned to RecoVertex. Only the information of the selected tracks is used. 
+	     The default value "-999" is assigned to the SV variables for jets belonging to this category.
+	     
+3 soft lepton categories, independent of the secondary vertex categories:
+-- NoSoftLepton: Including jets without soft leptons found inside the jet;
+-- SoftMuon: At least one soft muon was found inside the jet;
+-- SoftElectron: No soft muon, but at least one soft electron was found inside the jet.
+
+In my case, because of few events avaiable -> few leptons in jet, I've flagged the jet according to this definition but I've considered the lepton variables without distinction between muons and electron, e.g. I've considered "Number of leptons per jet" and not "Number of muons per jet"+"Number of electrons per jet". 
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+the displaced tracks (and leptons, too) are ordered by decreasing 2D impact parameter significance (CONSIDERING THE SIGN)
+the secondary vertices are ordered by increasing uncertainty on their 3D flight distance.
+
+For track- and lepton-based variables, up to two tracks or leptons are used (if available), while for the secondary vertex variables only the first secondary vertex is used (if available).
+
+Variabili estratte dai sample : 
+
+	- vertex_cat : number of jets per vertex-category (numbers are associated to categories: "0" for novertex and "1" for recovertex).
+	- lepton_cat : number of jets per lepton-category (numbers are associated to categories: "0" for nosoftlepton , "1" for softmuon,
+			 "2" for softelectron).
+
+- VARIABILI RELATIVE AI VERTICI SECONDARI:
+
+	- n_SV : The number of secondary vertices associated with the jet.
+	- n_trk_from_SV : The number of tracks associated with the first secondary vertex.
+	- fd_sig_xy_SV  : The 2D flight distance significance of the first secondary vertex.
+	- fd_sig_xyz_SV : The 3D flight distance significance of the first secondary vertex.
+	- corrected_mass_SV : The corrected mass [ sqrt(M^2 + p^2*sin(theta)^2) + p*sin(theta)] for the first secondary vertex.
+	- energy_ratio_SV : The secondary vertex energy ratio, defined as the energy of the secondary vertex with the smallest uncertainty on 					its flight distance divided by the energy of the total summed four-momentum vector of the selected tracks.
+	- dR_SV_JET : The DR between the flight direction of the secondary vertex and the jet axis.
+	- MassEnergyFraction_SV : The “massVertexEnergyFraction” variable, which is defined as X/(X +0.04), where X is the corrected secondary 					vertex mass divided by the average b meson mass multiplied by the scalar sum of the track energies for tracks 					associated with the secondary vertex divided by the scalar sum of the track energies for track associated 
+				with the jet.
+	- Boost_SV : The “vertexBoost” variable, defined as Y2/(Y2 + 10), where Y is the square root of the average b meson mass multiplied 				with the scalar sum of the track pT for tracks associated with the vertex, divided by the product of the corrected 				secondary vertex mass and the square root of the jet pT. This variable is related to the boost of the secondary vertex.
+
+- VARIABILI RELATIVE ALLE TRACCE
+
+	- n_trk_in_Jet : The number of tracks associated with the jet.
+	- SIP_sig_xy_TRK1 : The 2D signed impact parameter significance of the first track 
+	- SIP_sig_xy_TRK2 : The 2D signed impact parameter significance of the second track 
+	- SIP_sig_xyz_TRK1 : The 3D signed impact parameter significance of the first track
+	- SIP_sig_xyz_TRK2 : The 3D signed impact parameter significance of the second track
+	- eta_rel_TRK1     : The pseudorapidity of the track relative to the jet axis for the first track
+	- eta_rel_TRK2     : The pseudorapidity of the track relative to the jet axis for the second track
+	- pt_rel_TRK1      : The track pT relative to the jet axis, i.e. the track momentum perpendicular to the jet axis,for the first track
+	- pt_rel_TRK2      : The track pT relative to the jet axis, i.e. the track momentum perpendicular to the jet axis,for the second track
+	- pt_rel_permom_TRK1 : The track pT relative to the jet axis divided by the magnitude of the track momentum vector,for the first track
+	- pt_rel_permom_TRK2 : The track pT relative to the jet axis divided by the magnitude of the track momentum vector,for the second track
+	- pl_rel_TRK1      : The track momentum parallel to the jet direction, for the first track
+	- pl_rel_TRK2      : The track momentum parallel to the jet direction, for the second track
+	- pl_rel_permom_TRK1 : The track momentum parallel to the jet direction divided by the magnitude of the track momentum vector, for the 					first tracks.
+	- pl_rel_permom_TRK2 : The track momentum parallel to the jet direction divided by the magnitude of the track momentum vector, for the 					second tracks.
+	- dR_jet_TRK1      : The DR between the track and the jet axis for the first track.
+	- dR_jet_TRK2      : The DR between the track and the jet axis for the second track.
+	- dR_jet_tot_TRK   : The DR between the total summed four-momentum vector of the tracks and the jet axis.
+	- Et_trk_Jet	   : The transverse energy of the total summed four-momentum vector of the selected tracks divided by the transverse 					energy of the jet.
+	- SIP_sig_xy_TRK_above_trh : The 2Dimpact parameter significance of the first track that raises the combined invariant mass of 						the tracks above 1.5 GeV. This track is obtained by summing the four-momenta of the tracks adding one 						track at the time. Every time a track is added, the total four-momentum vector is computed. The 2D 						impact parameter significance of the first track that is added resulting in a mass of the total 					four-momentum vector above the aforemention threshold is used as a variable. The threshold of 1.5 GeV 						is related to the c quark mass.
+	- SIP_sig_xyz_TRK_above_trh : The 3D impact parameter significance of the first track that raises the combined invariant mass of 						the tracks above 1.5 GeV.
+	- dist_trk1_Jet_atPCA : The distance between the track and the jet axis at their point of closest approach, for the first track
+	- dist_trk2_Jet_atPCA : The distance between the track and the jet axis at their point of closest approach, for the second track
+	- decay_length_TRK1   : The track decay length, i.e. the distance between the primary vertex and the track at the point of closest 					approach between the track and the jet axis, for the first track.
+	- decay_length_TRK2   : The track decay length for the second track.  
+	
+
+- VARIABILI RELATIVE AI LEPTONI: (variabili uguali per definizione a quelli delle tracce non sono descritti)
+
+	- n_LEP
+	- SIP_sig_xyz_LEP1
+	- SIP_sig_xyz_LEP2
+	- eta_rel_LEP1
+	- eta_rel_LEP2
+	- pt_rel_LEP1
+	- pt_rel_LEP2
+	- dR_jet_LEP1
+	- dR_jet_LEP2
+	- pt_lj_LEP1 : The lepton pT divided by the jet pT, for the first lepton.
+	- pt_lj_LEP2 : The lepton pT divided by the jet pT, for the second lepton.
+	- pl_rel_perjetmom_LEP1 : The lepton momentum parallel to the jet direction divided by the magnitude of the jet momentum, 
+					for the first lepton.
+	- pl_rel_perjetmom_LEP2 : The lepton momentum parallel to the jet direction divided by the magnitude of the jet momentum, 
+					for the second lepton.
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
